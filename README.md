@@ -4,8 +4,6 @@
 
 # ttydBridge
 
-English | (/README_CN.md)
-
 Docker containers based on ttyd bypass the isolation mechanism.
 
 A "bridge" to the host environment, allowing you to easily use the host terminal in your browser.
