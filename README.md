@@ -8,16 +8,6 @@ Docker containers based on ttyd bypass the isolation mechanism.
 
 A "bridge" to the host environment, allowing you to easily use the host terminal in your browser.
 
-[![docker tag][docker-tag-image]][github-url] [![docker pulls][docker-pulls-image]][docker-url] [![docker image size][docker-image-size-image]][docker-url]
-
-[docker-tag-image]: https://img.shields.io/docker/v/cp0204/ttydbridge
-[docker-pulls-image]: https://img.shields.io/docker/pulls/cp0204/ttydbridge
-[docker-image-size-image]: https://img.shields.io/docker/image-size/cp0204/ttydbridge
-[github-url]: https://github.com/Cp0204/ttydbridge
-[docker-url]: https://hub.docker.com/r/cp0204/ttydbridge
-
-</div>
-
 ## Usage
 
 Run the container:
@@ -48,6 +38,3 @@ Access the web terminal via `http://yourhost:2222` and login with your system us
 | `SSL_CERT` `SSL_KEY` `SSL_CA`   |         | Host certificate paths, effective when ENABLE_SSL=true                                                    |
 | `ENABLE_IPV6`                   | `false` | Enable IPv6 support                                                                                       |
 | `AUTO_ALLOW_PORT`               | `false` | Automatically allow web ports                                                                             |
-
-
-
