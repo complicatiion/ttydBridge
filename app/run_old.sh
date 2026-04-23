@@ -2,35 +2,35 @@
 
 exec_dir=${EXEC_DIR:-"/opt"}
 exec_path="$exec_dir/ttyd"
-pid_file="$exec_dir/ttydbridge.pid"
 start_command=${START_COMMAND:-"login"}
 host_exists_ttyd=0
 host_exists_iptables_rule=0
 
-# ttyd options
-# https://github.com/complicatiion/ttydbridge
+# ttyd 选项
+# https://github.com/tsl0922/ttyd#command-line-options
 ttyd_options=()
 
-# Listening port
+# 监听端口
 port=${PORT:-2222}
+ttyd_options+=(-p "$port")
 
-# Automatically allow the port
+# 自动放行端口
 auto_allow_port=${AUTO_ALLOW_PORT:-"false"}
 
-# Allow clients to write to the TTY
+# 允许客户端写入TTY
 allow_write=${ALLOW_WRITE:-"true"}
 if [[ "$allow_write" != "false" ]]; then
     ttyd_options+=("-W")
 fi
 
-# Credentials for basic authentication
+# 基本身份验证的凭据
 http_username="${HTTP_USERNAME}"
 http_password="${HTTP_PASSWORD}"
 if [[ -n "$http_username" && -n "$http_password" ]]; then
     ttyd_options+=(-c "$http_username:$http_password")
 fi
 
-# Enable SSL
+# 启用SSL
 enable_ssl=${ENABLE_SSL:-"false"}
 ssl_cert="${SSL_CERT}"
 ssl_key="${SSL_KEY}"
@@ -48,35 +48,17 @@ if [[ "$enable_ssl" != "false" ]]; then
     fi
 fi
 
-# Enable IPv6 support
+# 启用IPv6支持
 enable_ipv6=${ENABLE_IPV6:-"false"}
 if [[ "$enable_ipv6" != "false" ]]; then
     ttyd_options+=("-6")
 fi
 
-# Terminal theme / colors (compact JSON recommended)
-# Example:
-# THEME_JSON='{"background":"#000000","foreground":"#c084fc","cursor":"#c084fc","selection":"#4c1d95"}'
-theme_json="${THEME_JSON}"
-if [[ -n "$theme_json" ]]; then
-    ttyd_options+=(-t "theme=$theme_json")
-fi
-
-# Other custom options
+# 其他自定义选项
 custom_options="${CUSTOM_OPTIONS}"
 if [[ -n "$custom_options" ]]; then
-    read -r -a custom_options_array <<< "$custom_options"
-    if [[ ${#custom_options_array[@]} -gt 0 ]]; then
-        ttyd_options+=("${custom_options_array[@]}")
-    fi
+    ttyd_options+=("$custom_options")
 fi
-
-# Add port option after all checks
-if ! [[ "$port" =~ ^[0-9]+$ ]] || (( port < 1 || port > 65535 )); then
-    echo "Error: Invalid PORT '$port'. Expected a value between 1 and 65535."
-    exit 1
-fi
-ttyd_options+=(-p "$port")
 
 host_exec() {
     nsenter -m -u -i -n -p -t 1 sh -c "$1"
@@ -107,18 +89,17 @@ start() {
         echo "ExecDir: $exec_dir does not exist, creating"
         mkdir -p "$exec_dir"
     fi
-
     # Create executable
     if [[ ! -f "$exec_path" ]]; then
         echo "ttyd: Copy to $exec_path"
-        cp /usr/bin/ttyd "$exec_path"
+        cp /usr/bin/ttyd $exec_path
     else
         echo "ttyd: Host already exist $exec_path"
         host_exists_ttyd=1
     fi
-    chmod +x "$exec_path"
+    chmod +x $exec_path
 
-    # Auto allow port
+    # auto allow port
     if [[ "$auto_allow_port" != "false" ]]; then
         port_check_error=$(
             host_exec "iptables -C INPUT -p tcp --dport $port -j ACCEPT" &>/dev/null
@@ -133,20 +114,10 @@ start() {
         fi
     fi
 
-    # Cleanup stale pid file if present
-    if [[ -f "$pid_file" ]]; then
-        rm -f "$pid_file"
-    fi
-
-    # Exec
+    # exec
     exec_command="$exec_path ${ttyd_options[*]} $start_command"
     echo "ttyd startup command: $exec_command"
-
-    if host_exec "command -v nohup >/dev/null 2>&1"; then
-        host_exec "nohup $exec_command >/dev/null 2>&1 & echo \$! > \"$pid_file\""
-    else
-        host_exec "$exec_command >/dev/null 2>&1 & echo \$! > \"$pid_file\""
-    fi
+    host_exec "$exec_command" &
 
     echo "Keep Running..."
     while true; do
@@ -156,26 +127,15 @@ start() {
 
 stop() {
     echo "Stopping..."
-
-    if [[ -f "$pid_file" ]]; then
-        ttyd_pid=$(cat "$pid_file" 2>/dev/null)
-        if [[ "$ttyd_pid" =~ ^[0-9]+$ ]]; then
-            echo "ttyd: Stop host process $ttyd_pid"
-            host_exec "kill $ttyd_pid 2>/dev/null || true"
-        fi
-        rm -f "$pid_file"
-    fi
-
     if [[ -f "$exec_path" && $host_exists_ttyd -eq 0 ]]; then
         echo "ttyd: Cleanup $exec_path"
         rm "$exec_path"
-    fi
 
+    fi
     if [[ "$auto_allow_port" != "false" && $host_exists_iptables_rule -eq 0 ]]; then
         echo "AutoAllowPort: Delete iptables rule $port"
         host_exec "iptables -D INPUT -p tcp --dport $port -j ACCEPT"
     fi
-
     echo "Goodbye"
     echo ""
     exit 0
