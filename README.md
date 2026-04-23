@@ -52,6 +52,4 @@ Access the web terminal via `http://yourhost:2222` and login with your system us
 | `AUTO_ALLOW_PORT`               | `false` | Automatically allow web ports                                                                             |
 
 
-## Thank
 
-- [ttyd](https://github.com/tsl0922/ttyd) : Share your terminal over the web
