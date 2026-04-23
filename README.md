@@ -4,7 +4,7 @@
 
 # ttydBridge
 
-English | [简体中文](/README_CN.md)
+English | (/README_CN.md)
 
 Docker containers based on ttyd bypass the isolation mechanism.
 
