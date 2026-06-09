@@ -10,6 +10,10 @@ This project is designed for environments where you intentionally want direct ac
 
 </div>
 
+## Disclaimer
+
+This Project is WIP! Currently there are no published packages available, you need to build your own.
+
 ## What it does
 
 - Exposes the **host terminal** in the browser
